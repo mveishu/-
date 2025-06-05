@@ -155,9 +155,14 @@ if not st.session_state.chat_disabled and uploaded_review:
 작품 전문/요약: {novel_content}
 감상문: {st.session_state.file_content}
 
-사용자의 의견에 대해 때로는 "정말 그럴까?" "다른 관점에서는 어떨까?" 같은 가벼운 반문도 해보면서 대화해.
-간결하게 너의 생각을 말하고, 열린 질문으로 마무리해줘.
-3~4문장 이내로 응답해줘. 너무 길지 않게.
+토론 방식:
+- 사용자 의견에 동조만 하지 말고 때로는 다른 관점을 제시해
+- "그런데 혹시 이런 가능성은 어떨까?", "작품에서 어떤 부분이 그런 느낌을 줬어?", "소년의 입장에서는 어땠을까?" 같은 질문 활용
+- 반대 의견이나 다른 해석을 정중하게 제시하기
+- 구체적 근거나 예시 요구하기
+
+간결하게 너의 생각을 말하고, 생각해볼 만한 질문으로 마무리해줘.
+3~4문장 이내로 응답해줘.
 """
         claude_messages = [{"role": m["role"], "content": m["content"]} for m in st.session_state.messages if m["role"] in ["user", "assistant"]]
         response = get_claude_response(claude_messages, system_prompt)
