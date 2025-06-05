@@ -6,6 +6,76 @@ import smtplib
 import requests
 import time
 
+def check_inappropriate_content(user_message):
+    """부적절한 발언 감지 (문맥 고려)"""
+    
+    # 명확히 부적절한 표현들만
+    clearly_inappropriate = [
+        "ㅂㅅ", "병신", "미친놈", "미친년",
+        "꺼져", "씨발", "존나", "개새끼"
+    ]
+    
+    # 차별적 맥락에서 사용될 때만 문제가 되는 표현들
+    context_sensitive = {
+        "여자는": ["원래", "다", "항상", "역시"],
+        "남자는": ["원래", "다", "항상", "역시"],
+        "죽어": ["버려", "라", "야지"],
+    }
+    
+    # 명확히 부적절한 표현 체크
+    for keyword in clearly_inappropriate:
+        if keyword in user_message:
+            return True, keyword
+    
+    # 맥락을 고려한 체크
+    for main_word, trigger_words in context_sensitive.items():
+        if main_word in user_message:
+            for trigger in trigger_words:
+                if trigger in user_message:
+                    return True, main_word + " " + trigger
+    
+    return False, None
+
+def create_feedback_message(inappropriate_expression):
+    """부적절한 발언에 대한 피드백 메시지 생성"""
+    return f"잠깐, '{inappropriate_expression}' 같은 표현은 좀 그런 것 같아. 우리 서로 존중하면서 <나, 나, 마들렌>에 대해 이야기하자. 그런 표현 말고 네 생각을 다시 말해줄래? 소설에서 어떤 부분이 그런 감정을 불러일으켰는지 궁금해."
+
+def check_off_topic(user_message):
+    """소설 <나, 나, 마들렌> 주제 이탈 감지"""
+    
+    # 소설 관련 키워드들
+    novel_keywords = [
+        "나", "마들렌", "자아", "분열", "정체성", "또다른나", "성폭력", 
+        "소설", "작품", "박서련", "이야기", "인물", "주인공", "연인"
+    ]
+    
+    # 완전히 다른 주제들
+    off_topic_keywords = [
+        "게임", "아이돌", "연예인", "축구", "야구", "음식", "맛집",
+        "학교", "선생님", "시험", "숙제", "친구들", "취미", "영화",
+        "유튜브", "틱톡", "인스타", "카카오", "네이버", "놀자", "딴얘기", "다른 얘기"
+    ]
+    
+    has_novel_keyword = any(keyword in user_message for keyword in novel_keywords)
+    has_off_topic = any(keyword in user_message for keyword in off_topic_keywords)
+    
+    if len(user_message) > 3 and not has_novel_keyword and has_off_topic:
+        return True
+    
+    return False
+
+def create_redirect_message():
+    """주제 이탈 시 다시 소설로 유도하는 메시지"""
+    redirect_messages = [
+        "어? 갑자기 다른 이야기네! 우리 <나, 나, 마들렌> 이야기 계속하자.",
+        "아, 그것도 재미있겠지만 우리 소설 토론 시간이야! <나, 나, 마들렌>에서 가장 기억에 남는 장면이 뭐야?",
+        "잠깐, 우리 지금 문학 토론 중이잖아! 소설 <나, 나, 마들렌>로 다시 돌아가자.",
+        "그런 얘기도 좋지만, 우리 <나, 나, 마들렌> 이야기 마저 하자! '나'와 '또 다른 나'에 대해 더 얘기해볼래?"
+    ]
+    
+    import random
+    return random.choice(redirect_messages)
+
 # GitHub에서 소설 전문 가져오기
 @st.cache_data
 def load_novel_from_github():
@@ -119,6 +189,15 @@ if uploaded_review and not st.session_state.start_time:
     st.session_state.messages.append({"role": "assistant", "content": first_question})
 
 elapsed = time.time() - st.session_state.start_time if st.session_state.start_time else 0
+
+# 8분 경고 메시지 (한 번만 표시)
+if elapsed > 480 and elapsed <= 600 and "eight_min_warning" not in st.session_state:
+    st.session_state.eight_min_warning = True
+    
+    warning_msg = "우리 대화 시간이 얼마 남지 않았네. 마지막으로, <나, 나, 마들렌>에서 가장 궁금했던 부분이 있어?"
+    st.session_state.messages.append({"role": "assistant", "content": warning_msg})
+
+# 10분 후 종료
 if elapsed > 600 and not st.session_state.final_prompt_mode:
     st.session_state.final_prompt_mode = True
     st.session_state.chat_disabled = True
@@ -150,29 +229,53 @@ for m in st.session_state.messages:
 
 if not st.session_state.chat_disabled and uploaded_review:
     if prompt := st.chat_input("✍️ 대화를 입력하세요"):
+        # 사용자 메시지 먼저 표시 (공통)
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
 
-        system_prompt = f"""
-너는 {user_name}와 <나, 나, 마들렌>을 읽은 동료야.
-작품 전문/요약: {novel_content}
-감상문: {st.session_state.file_content}
+        # 부적절한 발언 체크
+        is_inappropriate, inappropriate_word = check_inappropriate_content(prompt)
+        
+        if is_inappropriate:
+            # 부적절한 발언 시 피드백만 표시
+            feedback_msg = create_feedback_message(inappropriate_word)
+            st.session_state.messages.append({"role": "assistant", "content": feedback_msg})
+            with st.chat_message("assistant"):
+                st.markdown(feedback_msg)
+        elif check_off_topic(prompt):
+            # 주제 이탈 체크
+            redirect_msg = create_redirect_message()
+            st.session_state.messages.append({"role": "assistant", "content": redirect_msg})
+            with st.chat_message("assistant"):
+                st.markdown(redirect_msg)
+        else:
+            # 정상 대화 진행
 
-토론 방식:
-- 사용자 의견에 동조만 하지 말고 때로는 다른 관점을 제시해
-- "그런데 혹시 이런 가능성은 어떨까?", "작품에서 어떤 부분이 그런 느낌을 줬어?", "소년의 입장에서는 어땠을까?" 같은 질문 활용
-- 반대 의견이나 다른 해석을 정중하게 제시하기
-- 구체적 근거나 예시 요구하기
+                system_prompt = f"""
+                너는 {user_name}와 함께 소설 <나, 나, 마들렌>을 읽은 동료 학습자야. 
+                작품 전문: {novel_content[:1000]}
+                감상문: {st.session_state.file_content}
 
-간결하게 너의 생각을 말하고, 생각해볼 만한 질문으로 마무리해줘.
-3~4문장 이내로 응답해줘.
-"""
-        claude_messages = [{"role": m["role"], "content": m["content"]} for m in st.session_state.messages if m["role"] in ["user", "assistant"]]
-        response = get_claude_response(claude_messages, system_prompt)
-        st.session_state.messages.append({"role": "assistant", "content": response})
-        with st.chat_message("assistant"):
-            st.markdown(response)
+                **중요한 원칙**:
+                1. 절대 교사나 정답 제공자 역할 금지 - 너도 같은 학습자일 뿐
+                2. 단정적, 확정적 진술 금지 - 항상 "나는 이렇게 봤는데", "혹시 이런 건 어떨까?" 식으로
+                3. 계속 질문하면서 사용자가 스스로 해석하도록 유도
+                4. 소설 원문의 구체적 장면이나 대사를 언급하며 토론
+
+                대화 방식:
+                - "나는 그 장면에서 이런 느낌이었는데, 너는 어떻게 봤어?"
+                - "어? 정말? 나는 오히려 '나'가 더 복잡했던 것 같은데... 왜 그렇게 생각해?"
+                - "마들렌의 입장에서는 어땠을까?", "'또 다른 나'는 뭘 의미한다고 봐?"
+                - 답을 주지 말고 계속 질문으로 생각하게 만들기
+
+                3문장 이내로 자연스럽게 대화해줘.
+                """
+                claude_messages = [{"role": m["role"], "content": m["content"]} for m in st.session_state.messages if m["role"] in ["user", "assistant"]]
+                response = get_claude_response(claude_messages, system_prompt)
+                st.session_state.messages.append({"role": "assistant", "content": response})
+                with st.chat_message("assistant"):
+                    st.markdown(response)
 
 if st.session_state.chat_disabled:
     st.markdown("---")
