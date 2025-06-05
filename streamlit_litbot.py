@@ -6,9 +6,35 @@ import smtplib
 import requests
 import time
 
-novel_summary = """
-이 소설은 '나'라는 인물이 어느 날 자신과 똑같은 또 다른 '나'를 발견하면서 시작된다. 두 사람은 서로를 받아들이고 실용적으로 역할을 분담하며 살아간다. 이들은 과거, 현재의 자아가 혼재하는 경험을 하며 일상과 내면을 반추한다. 소설은 '나'와 연인 마들렌, 그리고 마들렌의 성폭력 고소 사건 등을 통해 정체성과 자아 분열, 감정의 복잡성을 탐구한다. 결말부에서는 마들렌에게 자신의 분열된 존재가 드러나고, '나'는 스스로를 제거하려는 선택 앞에 놓인다.
-"""
+# GitHub에서 소설 전문 가져오기
+@st.cache_data
+def load_novel_from_github():
+    try:
+        # GitHub raw URL 형식으로 수정 필요
+        url = "https://raw.githubusercontent.com/mveishu/-/main/Madeleine.txt"
+        response = requests.get(url)
+        response.encoding = 'utf-8'
+        if response.status_code == 200:
+            return response.text
+        else:
+            return None
+    except Exception as e:
+        st.error(f"소설 로딩 오류: {e}")
+        return None
+
+# 소설 전문 로딩
+novel_full_text = load_novel_from_github()
+
+# 기존 요약 대신 전문 사용 또는 백업 요약
+if novel_full_text:
+    novel_content = novel_full_text
+    st.success("✅ 소설 전문을 성공적으로 로딩했습니다.")
+else:
+    # 백업 요약
+    novel_content = """
+    이 소설은 아홉 살 소년이 과수 노파로부터 누이가 돌아간 어머니와 닮았다는 말을 듣고 어머니에 대한 환상을 품게 되지만, 누이의 실제 모습에 실망하며 그녀를 거부하고 냉대하는 과정을 그린다. 소년은 누이가 베푸는 어머니 같은 사랑을 인정하지 않으려 하고, 누이의 연애 사건과 결혼, 그리고 죽음에 이르기까지 지속적으로 그녀를 멀리하지만, 결국 누이의 죽음 후에야 눈물을 흘리며 그녀 역시 어머니처럼 아름다운 별이 될 수 있음을 깨닫는다.
+    """
+    st.warning("⚠️ 소설 전문 로딩 실패, 요약 사용 중")
 
 def get_claude_response(conversation_history, system_prompt):
     headers = {
@@ -80,7 +106,7 @@ if uploaded_review and not st.session_state.start_time:
         f"""
 너는 {user_name}와 함께 소설 <나, 나, 마들렌>을 읽은 동료 학습자야.
 작품 요약:
-{novel_summary}
+{novel_content}
 
 {user_name}의 감상문 요약:
 {st.session_state.file_content[:400]}  # 요약 대신 앞부분 사용 가능
@@ -97,7 +123,7 @@ if elapsed > 600 and not st.session_state.final_prompt_mode:
 지금은 마지막 응답이야. 사용자와 나눈 대화를 정리하고 인사로 마무리해줘.
 질문은 하지 마. 짧고 따뜻하게 끝내줘. 3문장 이내로 말해줘.
 
-작품 요약: {novel_summary}
+작품 요약: {novel_content}
 감상문 요약: {st.session_state.file_content[:400]}
 """
     claude_messages = [{"role": m["role"], "content": m["content"]} for m in st.session_state.messages if m["role"] in ["user", "assistant"]]
@@ -126,7 +152,7 @@ if not st.session_state.chat_disabled and uploaded_review:
 
         system_prompt = f"""
 너는 {user_name}와 <나, 나, 마들렌>을 읽은 동료야.
-작품 요약: {novel_summary}
+작품 요약: {novel_content}
 감상문 요약: {st.session_state.file_content[:400]}
 
 간결하게 너의 생각을 말하고, 열린 질문으로 마무리해줘.
