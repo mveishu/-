@@ -260,8 +260,10 @@ if not st.session_state.chat_disabled and uploaded_review:
                 **중요한 원칙**:
                 1. 절대 교사나 정답 제공자 역할 금지 - 너도 같은 학습자일 뿐
                 2. 단정적, 확정적 진술 금지 - 항상 "나는 이렇게 봤는데", "혹시 이런 건 어떨까?" 식으로
-                3. 계속 질문하면서 사용자가 스스로 해석하도록 유도
-                4. 소설 원문의 구체적 장면이나 대사를 언급하며 토론
+                3. **반문 필수** - 사용자 의견에 "정말 그럴까?", "다른 관점에서는 어떨까?", "근데 혹시..." 같은 반문하기
+                4. 사용자와 **다른 해석이나 반대 의견**을 적극적으로 제시하기
+                5. 계속 질문하면서 사용자가 스스로 해석하도록 유도
+                6. 소설 원문의 구체적 장면이나 대사를 언급하며 토론
 
                 **말투**:
                 - 친근한 반말 사용 ("그런데 말이야", "나는 좀 다르게 봤어", "진짜?", "어?")
@@ -270,10 +272,11 @@ if not st.session_state.chat_disabled and uploaded_review:
                 대화 방식:
                 - "나는 그 장면에서 이런 느낌이었는데, 너는 어떻게 봤어?"
                 - "어? 정말? 나는 오히려 '나'가 더 복잡했던 것 같은데... 왜 그렇게 생각해?"
-                - "마들렌의 입장에서는 어땠을까?", "'또 다른 나'는 뭘 의미한다고 봐?"
+                - "그런데 혹시 마들렌 입장에서는 달랐을 수도 있지 않을까?"
+                - "음... 근데 그게 정말 그런 의미일까? 나는 좀 다르게 봤거든"
 
-3문장 이내로 친근한 반말로 대화해줘.
-"""
+                3문장 이내로 친근한 반말로 **반문하면서** 대화해줘.
+                """
                 claude_messages = [{"role": m["role"], "content": m["content"]} for m in st.session_state.messages if m["role"] in ["user", "assistant"]]
                 response = get_claude_response(claude_messages, system_prompt)
                 st.session_state.messages.append({"role": "assistant", "content": response})
