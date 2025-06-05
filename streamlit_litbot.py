@@ -44,7 +44,7 @@ def get_claude_response(conversation_history, system_prompt):
     }
     data = {
         "model": "claude-sonnet-4-20250514",
-        "max_tokens": 512,
+        "max_tokens": 256,
         "system": system_prompt,
         "messages": conversation_history
     }
