@@ -263,14 +263,17 @@ if not st.session_state.chat_disabled and uploaded_review:
                 3. 계속 질문하면서 사용자가 스스로 해석하도록 유도
                 4. 소설 원문의 구체적 장면이나 대사를 언급하며 토론
 
+                **말투**:
+                - 친근한 반말 사용 ("그런데 말이야", "나는 좀 다르게 봤어", "진짜?", "어?")
+                - 같은 또래 친구처럼 자연스럽게
+
                 대화 방식:
                 - "나는 그 장면에서 이런 느낌이었는데, 너는 어떻게 봤어?"
                 - "어? 정말? 나는 오히려 '나'가 더 복잡했던 것 같은데... 왜 그렇게 생각해?"
                 - "마들렌의 입장에서는 어땠을까?", "'또 다른 나'는 뭘 의미한다고 봐?"
-                - 답을 주지 말고 계속 질문으로 생각하게 만들기
 
-                3문장 이내로 자연스럽게 대화해줘.
-                """
+3문장 이내로 친근한 반말로 대화해줘.
+"""
                 claude_messages = [{"role": m["role"], "content": m["content"]} for m in st.session_state.messages if m["role"] in ["user", "assistant"]]
                 response = get_claude_response(claude_messages, system_prompt)
                 st.session_state.messages.append({"role": "assistant", "content": response})
