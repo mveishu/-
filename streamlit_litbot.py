@@ -5,6 +5,8 @@ from email.message import EmailMessage
 import smtplib
 import requests
 import time
+import fitz  # PyMuPDF
+
 
 def check_inappropriate_content(user_message):
     """부적절한 발언 감지 (문맥 고려)"""
@@ -75,6 +77,13 @@ def create_redirect_message():
     
     import random
     return random.choice(redirect_messages)
+
+def extract_text_from_pdf(file):
+    pdf = fitz.open(stream=file.read(), filetype="pdf")
+    text = ""
+    for page in pdf:
+        text += page.get_text()
+    return text
 
 # GitHub에서 소설 전문 가져오기
 @st.cache_data
@@ -154,10 +163,19 @@ else:
     st.warning("👤 이름을 입력해주세요.")
     st.stop()
 
-uploaded_review = st.file_uploader("📄 감상문 업로드 (.txt)", type=["txt"], key="review")
+uploaded_review = st.file_uploader("📄 감상문 업로드 (.txt, .pdf)", type=["txt", "pdf"], key="review")
 
 if uploaded_review and "review_sent" not in st.session_state:
-    file_content = uploaded_review.read().decode("utf-8")
+    filename = uploaded_review.name.lower()  # ← 여기서 안전하게 확장자 확인
+
+    if filename.endswith(".txt"):
+        file_content = uploaded_review.read().decode("utf-8")
+    elif filename.endswith(".pdf"):
+        file_content = extract_text_from_pdf(uploaded_review)
+    else:
+        st.error("지원되지 않는 파일 형식입니다.")
+        st.stop()
+
     uploaded_review.seek(0)
     send_email_with_attachment(uploaded_review, f"[감상문] {user_name}_감상문", "사용자가 업로드한 감상문입니다.", uploaded_review.name)
     st.session_state.review_sent = True
