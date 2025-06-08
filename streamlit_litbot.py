@@ -79,6 +79,7 @@ def create_redirect_message():
     return random.choice(redirect_messages)
 
 def extract_text_from_pdf(file):
+    file.seek(0)  # ← 이 줄이 핵심입니다
     pdf = fitz.open(stream=file.read(), filetype="pdf")
     text = ""
     for page in pdf:
