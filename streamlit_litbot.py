@@ -164,79 +164,8 @@ else:
     st.warning("👤 이름을 입력해주세요.")
     st.stop()
 
-# 감상문 입력 방식 선택
-input_method = st.radio("감상문 입력 방식을 선택하세요:", ("📁 파일 업로드", "⌨️ 직접 입력"))
-uploaded_review = None
-file_content = ""
+uploaded_review = st.file_uploader("📄 감상문 업로드 (.txt, .pdf)", type=["txt", "pdf"], key="review")
 
-if input_method == "📁 파일 업로드":
-    uploaded_review = st.file_uploader("📄 감상문 파일을 업로드하세요 (.txt, .pdf)", type=["txt", "pdf"], key="review")
-    
-    if uploaded_review:
-        filename = uploaded_review.name.lower()
-        if filename.endswith(".txt"):
-            file_content = uploaded_review.read().decode("utf-8")
-        elif filename.endswith(".pdf"):
-            file_content = extract_text_from_pdf(uploaded_review)
-        else:
-            st.error("지원되지 않는 파일 형식입니다.")
-            st.stop()
-
-        # 이메일 전송 및 저장
-        uploaded_review.seek(0)
-        send_email_with_attachment(uploaded_review, f"[감상문] {user_name}_감상문", "사용자가 업로드한 감상문입니다.", uploaded_review.name)
-        st.session_state.review_sent = True
-        st.session_state.file_content = file_content
-        st.success("✅ 감상문을 성공적으로 업로드했어요!")
-
-elif input_method == "⌨️ 직접 입력":
-    file_content = st.text_area("✍️ 여기에 감상문을 입력하세요", height=300)
-
-    submit_clicked = st.button("📩 감상문 제출")
-
-    if submit_clicked:
-        if file_content.strip():
-            st.session_state.review_sent = True
-            st.session_state.file_content = file_content
-
-            # 이메일로 감상문 전송
-            text_file = BytesIO()
-            text_file.write(file_content.encode("utf-8"))
-            text_file.seek(0)
-            text_file.name = f"{user_name}_입력감상문.txt"
-            send_email_with_attachment(
-                text_file,
-                f"[감상문] {user_name}_감상문",
-                "사용자가 직접 입력한 감상문입니다.",
-                text_file.name
-            )
-
-            st.success("✅ 감상문을 성공적으로 제출했어요!")
-
-            # 대화 자동 시작
-            if "start_time" not in st.session_state:
-                st.session_state.start_time = time.time()
-                st.session_state.messages = []
-                st.session_state.messages.append({
-                    "role": "assistant",
-                    "content": f"안녕, {user_name}! 감상문 잘 읽었어. 우리 같이 <나, 나, 마들렌> 이야기 나눠볼까?"
-                })
-
-                first_question = get_claude_response(
-                    [{"role": "user", "content": "감상문에서 인상 깊은 한 문장을 언급하고, 간결하게 느낌을 말한 뒤 짧고 간결하게 질문해줘."}],
-                    f"""
-너는 {user_name}와 함께 소설 <나, 나, 마들렌>을 읽은 동료 학습자야.
-작품 요약:
-{novel_content}
-
-{user_name}의 감상문 요약:
-{file_content[:400]}
-"""
-                )
-                st.session_state.messages.append({"role": "assistant", "content": first_question})
-        else:
-            st.warning("감상문 내용을 입력해주세요.")
-            
 if uploaded_review and "review_sent" not in st.session_state:
     filename = uploaded_review.name.lower()  # ← 여기서 안전하게 확장자 확인
 
@@ -258,7 +187,7 @@ for key in ["messages", "start_time", "chat_disabled", "final_prompt_mode"]:
     if key not in st.session_state:
         st.session_state[key] = [] if key == "messages" else False
 
-if "review_sent" in st.session_state and "start_time" not in st.session_state:
+if uploaded_review and not st.session_state.start_time:
     st.session_state.start_time = time.time()
     st.session_state.messages.append({
         "role": "assistant",
