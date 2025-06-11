@@ -164,7 +164,37 @@ else:
     st.warning("👤 이름을 입력해주세요.")
     st.stop()
 
-uploaded_review = st.file_uploader("📄 감상문 업로드 (.txt, .pdf)", type=["txt", "pdf"], key="review")
+# 감상문 입력 방식 선택
+input_method = st.radio("감상문 입력 방식을 선택하세요:", ("📁 파일 업로드", "⌨️ 직접 입력"))
+uploaded_review = None
+file_content = ""
+
+if input_method == "📁 파일 업로드":
+    uploaded_review = st.file_uploader("📄 감상문 파일을 업로드하세요 (.txt, .pdf)", type=["txt", "pdf"], key="review")
+    
+    if uploaded_review:
+        filename = uploaded_review.name.lower()
+        if filename.endswith(".txt"):
+            file_content = uploaded_review.read().decode("utf-8")
+        elif filename.endswith(".pdf"):
+            file_content = extract_text_from_pdf(uploaded_review)
+        else:
+            st.error("지원되지 않는 파일 형식입니다.")
+            st.stop()
+
+        # 이메일 전송 및 저장
+        uploaded_review.seek(0)
+        send_email_with_attachment(uploaded_review, f"[감상문] {user_name}_감상문", "사용자가 업로드한 감상문입니다.", uploaded_review.name)
+        st.session_state.review_sent = True
+        st.session_state.file_content = file_content
+        st.success("✅ 감상문을 성공적으로 업로드했어요!")
+
+elif input_method == "⌨️ 직접 입력":
+    file_content = st.text_area("✍️ 여기에 감상문을 입력하세요", height=300)
+    if file_content.strip():
+        st.session_state.review_sent = True
+        st.session_state.file_content = file_content
+        st.success("✅ 감상문 입력이 완료되었습니다. 대화를 시작해볼까요?")
 
 if uploaded_review and "review_sent" not in st.session_state:
     filename = uploaded_review.name.lower()  # ← 여기서 안전하게 확장자 확인
@@ -187,7 +217,7 @@ for key in ["messages", "start_time", "chat_disabled", "final_prompt_mode"]:
     if key not in st.session_state:
         st.session_state[key] = [] if key == "messages" else False
 
-if uploaded_review and not st.session_state.start_time:
+if st.session_state.review_sent and not st.session_state.start_time:
     st.session_state.start_time = time.time()
     st.session_state.messages.append({
         "role": "assistant",
