@@ -217,7 +217,7 @@ for key in ["messages", "start_time", "chat_disabled", "final_prompt_mode"]:
     if key not in st.session_state:
         st.session_state[key] = [] if key == "messages" else False
 
-if st.session_state.review_sent and not st.session_state.start_time:
+if st.session_state.get("review_sent") and not st.session_state.get("start_time"):
     st.session_state.start_time = time.time()
     st.session_state.messages.append({
         "role": "assistant",
