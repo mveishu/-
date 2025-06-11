@@ -196,6 +196,27 @@ elif input_method == "⌨️ 직접 입력":
         st.session_state.file_content = file_content
         st.success("✅ 감상문 입력이 완료되었습니다. 대화를 시작해볼까요?")
 
+        if "start_time" not in st.session_state:
+            st.session_state.start_time = time.time()
+            st.session_state.messages = []
+            st.session_state.messages.append({
+                "role": "assistant",
+                "content": f"안녕, {user_name}! 감상문 잘 읽었어. 우리 같이 <나, 나, 마들렌> 이야기 나눠볼까?"
+            })
+
+            first_question = get_claude_response(
+                [{"role": "user", "content": "감상문에서 인상 깊은 한 문장을 언급하고, 간결하게 느낌을 말한 뒤 짧고 간결하게 질문해줘."}],
+                f"""
+너는 {user_name}와 함께 소설 <나, 나, 마들렌>을 읽은 동료 학습자야.
+작품 요약:
+{novel_content}
+
+{user_name}의 감상문 요약:
+{st.session_state.file_content[:400]}
+"""
+            )
+            st.session_state.messages.append({"role": "assistant", "content": first_question})
+
 if uploaded_review and "review_sent" not in st.session_state:
     filename = uploaded_review.name.lower()  # ← 여기서 안전하게 확장자 확인
 
