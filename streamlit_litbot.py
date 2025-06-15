@@ -331,6 +331,8 @@ if not st.session_state.chat_disabled and st.session_state.get("file_content"):
 
                 3문장 이내로 친근한 반말로 **반문하면서** 대화해줘.
                 """
+                )
+                
                 claude_messages = [{"role": m["role"], "content": m["content"]} for m in st.session_state.messages if m["role"] in ["user", "assistant"]]
                 response = get_claude_response(claude_messages, system_prompt)
                 st.session_state.messages.append({"role": "assistant", "content": response})
