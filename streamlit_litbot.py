@@ -322,13 +322,37 @@ if not st.session_state.chat_disabled and st.session_state.get("file_content"):
 
 if st.session_state.chat_disabled:
     st.markdown("---")
-    st.subheader("📝 성찰일지를 업로드해주세요")
-    uploaded_reflection = st.file_uploader("📄 성찰일지 (.txt)", type=["txt"], key="reflection")
-    if uploaded_reflection and "reflection_sent" not in st.session_state:
-        send_email_with_attachment(uploaded_reflection, f"[성찰일지] {user_name}_성찰일지", "사용자가 업로드한 성찰일지입니다.", uploaded_reflection.name)
-        st.success("📩 성찰일지를 성공적으로 전송했어요!")
-        st.session_state.reflection_sent = True
+    st.subheader("📝 성찰일지 제출 방식 선택")
+    reflection_input_method = st.radio("어떻게 성찰일지를 제출하시겠어요?", ["파일 업로드", "직접 입력"], key="reflection_method")
 
-    if uploaded_reflection and "reflection_sent" in st.session_state:
+    if reflection_input_method == "파일 업로드":
+        uploaded_reflection = st.file_uploader("📄 성찰일지 업로드 (.txt)", type=["txt"], key="reflection_file")
+        if uploaded_reflection and "reflection_sent" not in st.session_state:
+            send_email_with_attachment(
+                uploaded_reflection,
+                f"[성찰일지] {user_name}_성찰일지",
+                "사용자가 업로드한 성찰일지입니다.",
+                uploaded_reflection.name
+            )
+            st.session_state.reflection_sent = True
+            st.success("📩 성찰일지를 성공적으로 전송했어요!")
+
+    elif reflection_input_method == "직접 입력":
+        reflection_text = st.text_area("✍️ 성찰일지를 여기에 입력해주세요", height=300, key="reflection_text")
+        if reflection_text and "reflection_sent" not in st.session_state:
+            if st.button("📩 성찰일지 제출"):
+                reflection_file = BytesIO(reflection_text.encode("utf-8"))
+                reflection_file.name = f"{user_name}_성찰일지.txt"
+                send_email_with_attachment(
+                    reflection_file,
+                    f"[성찰일지] {user_name}_성찰일지",
+                    "사용자가 입력한 성찰일지입니다.",
+                    reflection_file.name
+                )
+                st.session_state.reflection_sent = True
+                st.success("📩 성찰일지를 성공적으로 전송했어요!")
+
+    if st.session_state.get("reflection_sent"):
         st.success("🎉 모든 절차가 완료되었습니다. 실험에 참여해주셔서 감사합니다!")
         st.stop()
+
