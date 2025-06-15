@@ -166,22 +166,42 @@ else:
 
 uploaded_review = st.file_uploader("📄 감상문 업로드 (.txt, .pdf)", type=["txt", "pdf"], key="review")
 
-if uploaded_review and "review_sent" not in st.session_state:
-    filename = uploaded_review.name.lower()  # ← 여기서 안전하게 확장자 확인
+st.subheader("📄 감상문 제출 방식 선택")
+input_method = st.radio("어떻게 감상문을 제출하시겠어요?", ["파일 업로드", "직접 입력"], key="review_method")
 
-    if filename.endswith(".txt"):
-        file_content = uploaded_review.read().decode("utf-8")
-    elif filename.endswith(".pdf"):
-        file_content = extract_text_from_pdf(uploaded_review)
-    else:
-        st.error("지원되지 않는 파일 형식입니다.")
-        st.stop()
+# 파일 업로드 방식
+if input_method == "파일 업로드":
+    uploaded_review = st.file_uploader("📄 감상문 업로드 (.txt, .pdf)", type=["txt", "pdf"], key="review")
+    
+    if uploaded_review and "review_sent" not in st.session_state:
+        filename = uploaded_review.name.lower()
 
-    uploaded_review.seek(0)
-    send_email_with_attachment(uploaded_review, f"[감상문] {user_name}_감상문", "사용자가 업로드한 감상문입니다.", uploaded_review.name)
-    st.session_state.review_sent = True
-    st.session_state.file_content = file_content
-    st.success("✅ 감상문을 성공적으로 업로드했어요!")
+        if filename.endswith(".txt"):
+            file_content = uploaded_review.read().decode("utf-8")
+        elif filename.endswith(".pdf"):
+            file_content = extract_text_from_pdf(uploaded_review)
+        else:
+            st.error("지원되지 않는 파일 형식입니다.")
+            st.stop()
+
+        uploaded_review.seek(0)
+        send_email_with_attachment(uploaded_review, f"[감상문] {user_name}_감상문", "사용자가 업로드한 감상문입니다.", uploaded_review.name)
+        st.session_state.review_sent = True
+        st.session_state.file_content = file_content
+        st.success("✅ 감상문을 성공적으로 업로드했어요!")
+
+# 직접 입력 방식
+elif input_method == "직접 입력":
+    text_review = st.text_area("✍️ 감상문을 여기에 입력해주세요", height=300, key="manual_review")
+    if text_review and "review_sent" not in st.session_state:
+        if st.button("📩 감상문 제출"):
+            fake_file = BytesIO(text_review.encode("utf-8"))
+            fake_file.name = f"{user_name}_감상문.txt"
+            send_email_with_attachment(fake_file, f"[감상문] {user_name}_감상문", "사용자가 입력한 감상문입니다.", fake_file.name)
+            st.session_state.review_sent = True
+            st.session_state.file_content = text_review
+            st.success("✅ 감상문을 성공적으로 전송했어요!")
+
 
 for key in ["messages", "start_time", "chat_disabled", "final_prompt_mode"]:
     if key not in st.session_state:
