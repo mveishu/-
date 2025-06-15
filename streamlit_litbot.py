@@ -264,7 +264,7 @@ for m in st.session_state.messages:
     with st.chat_message(m["role"]):
         st.markdown(m["content"])
 
-if not st.session_state.chat_disabled and uploaded_review:
+if not st.session_state.chat_disabled and st.session_state.get("file_content"):
     if prompt := st.chat_input("✍️ 대화를 입력하세요"):
         # 사용자 메시지 먼저 표시 (공통)
         st.session_state.messages.append({"role": "user", "content": prompt})
