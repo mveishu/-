@@ -241,7 +241,6 @@ if st.session_state.get("review_sent") and not st.session_state.get("start_time"
 - 3문장 이내로 간결하게
 - 반드시 반문 포함
 """
-)
 
 elapsed = time.time() - st.session_state.start_time if st.session_state.start_time else 0
 
