@@ -164,14 +164,12 @@ else:
     st.warning("👤 이름을 입력해주세요.")
     st.stop()
 
-uploaded_review = st.file_uploader("📄 감상문 업로드 (.txt, .pdf)", type=["txt", "pdf"], key="review")
-
 st.subheader("📄 감상문 제출 방식 선택")
 input_method = st.radio("어떻게 감상문을 제출하시겠어요?", ["파일 업로드", "직접 입력"], key="review_method")
 
-# 파일 업로드 방식
+# 📂 파일 업로드 방식
 if input_method == "파일 업로드":
-    uploaded_review = st.file_uploader("📄 감상문 업로드 (.txt, .pdf)", type=["txt", "pdf"], key="review")
+    uploaded_review = st.file_uploader("📄 감상문 업로드 (.txt, .pdf)", type=["txt", "pdf"], key="review_upload")  # ← ✅ key 변경됨
     
     if uploaded_review and "review_sent" not in st.session_state:
         filename = uploaded_review.name.lower()
@@ -190,9 +188,9 @@ if input_method == "파일 업로드":
         st.session_state.file_content = file_content
         st.success("✅ 감상문을 성공적으로 업로드했어요!")
 
-# 직접 입력 방식
+# ✍️ 직접 입력 방식
 elif input_method == "직접 입력":
-    text_review = st.text_area("✍️ 감상문을 여기에 입력해주세요", height=300, key="manual_review")
+    text_review = st.text_area("✍️ 감상문을 여기에 입력해주세요", height=300, key="review_text")  # ← ✅ key 변경됨
     if text_review and "review_sent" not in st.session_state:
         if st.button("📩 감상문 제출"):
             fake_file = BytesIO(text_review.encode("utf-8"))
@@ -207,7 +205,7 @@ for key in ["messages", "start_time", "chat_disabled", "final_prompt_mode"]:
     if key not in st.session_state:
         st.session_state[key] = [] if key == "messages" else False
 
-if uploaded_review and not st.session_state.start_time:
+if st.session_state.review_sent and not st.session_state.start_time:
     st.session_state.start_time = time.time()
     st.session_state.messages.append({
         "role": "assistant",
