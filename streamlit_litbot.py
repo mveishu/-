@@ -116,23 +116,44 @@ else:
     """
     st.warning("⚠️ 소설 전문 로딩 실패, 요약 사용 중")
 
-def get_claude_response(conversation_history, system_prompt):
-    headers = {
-        "x-api-key": st.secrets["claude"]["api_key"],
-        "anthropic-version": "2023-06-01",
-        "Content-Type": "application/json"
-    }
-    data = {
-        "model": "claude-sonnet-4-20250514",
-        "max_tokens": 512,
-        "system": system_prompt,
-        "messages": conversation_history
-    }
-    res = requests.post("https://api.anthropic.com/v1/messages", headers=headers, json=data)
-    if res.status_code == 200:
-        return res.json()["content"][0]["text"]
-    else:
-        return f"❌ Claude API 오류: {res.status_code} - {res.text}"
+import openai
+
+openai.api_key = st.secrets["openai"]["api_key"]
+
+def get_chatbot_response(conversation_history, system_prompt):
+    try:
+        headers = {
+            "x-api-key": st.secrets["claude"]["api_key"],
+            "anthropic-version": "2023-06-01",
+            "Content-Type": "application/json"
+        }
+        data = {
+            "model": "claude-sonnet-4-20250514",
+            "max_tokens": 512,
+            "system": system_prompt,
+            "messages": conversation_history
+        }
+        res = requests.post("https://api.anthropic.com/v1/messages", headers=headers, json=data)
+
+        if res.status_code == 200:
+            return res.json()["content"][0]["text"]
+
+        elif res.status_code == 429:
+            st.warning("⚠️ AI 사용량이 많아 잠시 다른 모델로 응답할게!")  # 생략 가능
+            gpt_messages = [{"role": "system", "content": system_prompt}] + conversation_history
+            gpt_res = openai.ChatCompletion.create(
+                model="gpt-4o",
+                messages=gpt_messages,
+                max_tokens=512,
+                temperature=0.8,
+            )
+            return gpt_res.choices[0].message.content
+
+        else:
+            return f"❌ Claude API 오류: {res.status_code} - {res.text}"
+
+    except Exception as e:
+        return f"🚫 예기치 못한 오류: {e}"
 
 def send_email_with_attachment(file, subject, body, filename):
     msg = EmailMessage()
@@ -212,7 +233,7 @@ if st.session_state.get("review_sent") and not st.session_state.get("start_time"
         "content": f"안녕, {user_name}! 감상문 잘 읽었어. 우리 같이 <나, 나, 마들렌> 이야기 나눠볼까?"
     })
 
-    first_question = get_claude_response(
+    first_question = get_chatbot_response(
         [{"role": "user", "content": "감상문에서 인상 깊은 한 문장을 언급하고, 간결하게 느낌을 말한 뒤 짧고 간결하게 질문해줘."}],
         f"""
 너는 {user_name}와 함께 소설 <나, 나, 마들렌>을 읽은 동료 학습자야.
@@ -247,7 +268,7 @@ if elapsed > 600 and not st.session_state.final_prompt_mode:
 감상문 요약: {st.session_state.file_content[:400]}
 """
     claude_messages = [{"role": m["role"], "content": m["content"]} for m in st.session_state.messages if m["role"] in ["user", "assistant"]]
-    response = get_claude_response(claude_messages, final_prompt)
+    response = get_chatbot_response(claude_messages, final_prompt)
     st.session_state.messages.append({"role": "assistant", "content": response})
 
     log_lines = [f"{'리토' if m['role']=='assistant' else user_name}의 말: {m['content']}" for m in st.session_state.messages]
@@ -315,7 +336,7 @@ if not st.session_state.chat_disabled and st.session_state.get("file_content"):
                 3문장 이내로 친근한 반말로 **반문하면서** 대화해줘.
                 """
                 claude_messages = [{"role": m["role"], "content": m["content"]} for m in st.session_state.messages if m["role"] in ["user", "assistant"]]
-                response = get_claude_response(claude_messages, system_prompt)
+                response = get_chatbot_response(claude_messages, system_prompt)
                 st.session_state.messages.append({"role": "assistant", "content": response})
                 with st.chat_message("assistant"):
                     st.markdown(response)
