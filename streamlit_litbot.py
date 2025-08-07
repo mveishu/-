@@ -157,8 +157,16 @@ def get_chatbot_response(conversation_history, system_prompt):
         else:
             return f"❌ Claude API 오류: {res.status_code} - {res.text}"
 
-    except Exception as e:
-        return f"🚫 예기치 못한 오류: {e}"
+except Exception as e:
+    st.warning(f"⚠️ Claude 예외 발생: {e}, GPT로 전환합니다.")
+    gpt_messages = [{"role": "system", "content": system_prompt}] + conversation_history
+    gpt_res = client.chat.completions.create(
+        model="gpt-4o",
+        messages=gpt_messages,
+        max_tokens=512,
+        temperature=0.8,
+    )
+    return gpt_res.choices[0].message.content
 
 def send_email_with_attachment(file, subject, body, filename):
     msg = EmailMessage()
@@ -381,5 +389,6 @@ if st.session_state.chat_disabled:
     if st.session_state.get("reflection_sent"):
         st.success("🎉 모든 절차가 완료되었습니다. 실험에 참여해주셔서 감사합니다!")
         st.stop()
+
 
 
