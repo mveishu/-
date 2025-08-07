@@ -10,6 +10,10 @@ import fitz  # PyMuPDF
 
 def check_inappropriate_content(user_message):
     """부적절한 발언 감지 (문맥 고려)"""
+
+def is_meaningful_review(text):
+    stripped = text.strip().lower()
+    return len(stripped) >= 20 and stripped not in ["jjj", "test", "123", "내용 없음", " ", ""]
     
     # 명확히 부적절한 표현들만
     clearly_inappropriate = [
@@ -389,6 +393,7 @@ if st.session_state.chat_disabled:
     if st.session_state.get("reflection_sent"):
         st.success("🎉 모든 절차가 완료되었습니다. 실험에 참여해주셔서 감사합니다!")
         st.stop()
+
 
 
 
