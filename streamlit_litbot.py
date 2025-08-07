@@ -122,12 +122,6 @@ openai.api_key = st.secrets["openai"]["api_key"]
 
 def get_chatbot_response(conversation_history, system_prompt):
     try:
-        # Claude API 호출 전, 메시지 끝 공백 제거
-conversation_history = [
-    {"role": m["role"], "content": m["content"].rstrip()}
-    for m in conversation_history
-]
-
         headers = {
             "x-api-key": st.secrets["claude"]["api_key"],
             "anthropic-version": "2023-06-01",
@@ -144,21 +138,16 @@ conversation_history = [
         if res.status_code == 200:
             return res.json()["content"][0]["text"]
 
-        elif res.status_code == [429, 500, 503, 408]:
+        elif res.status_code == 429:
             st.warning("⚠️ AI 사용량이 많아 잠시 다른 모델로 응답할게!")  # 생략 가능
             gpt_messages = [{"role": "system", "content": system_prompt}] + conversation_history
-            from openai import OpenAI
-
-client = OpenAI(api_key=st.secrets["openai"]["api_key"])
-
-gpt_res = client.chat.completions.create(
-    model="gpt-4o",
-    messages=gpt_messages,
-    max_tokens=512,
-    temperature=0.8,
-)
-
-return gpt_res.choices[0].message.content
+            gpt_res = openai.ChatCompletion.create(
+                model="gpt-4o",
+                messages=gpt_messages,
+                max_tokens=512,
+                temperature=0.8,
+            )
+            return gpt_res.choices[0].message.content
 
         else:
             return f"❌ Claude API 오류: {res.status_code} - {res.text}"
@@ -387,5 +376,3 @@ if st.session_state.chat_disabled:
     if st.session_state.get("reflection_sent"):
         st.success("🎉 모든 절차가 완료되었습니다. 실험에 참여해주셔서 감사합니다!")
         st.stop()
-
-
