@@ -11,10 +11,6 @@ import fitz  # PyMuPDF
 def check_inappropriate_content(user_message):
     """부적절한 발언 감지 (문맥 고려)"""
 
-def is_meaningful_review(text):
-    stripped = text.strip().lower()
-    return len(stripped) >= 20 and stripped not in ["jjj", "test", "123", "내용 없음", " ", ""]
-    
     # 명확히 부적절한 표현들만
     clearly_inappropriate = [
         "ㅂㅅ", "병신", "미친놈", "미친년",
@@ -42,6 +38,10 @@ def is_meaningful_review(text):
     
     return False, None
 
+def is_meaningful_review(text):
+    stripped = text.strip().lower()
+    return len(stripped) >= 20 and stripped not in ["jjj", "test", "123", "내용 없음", " ", ""]
+    
 def create_feedback_message(inappropriate_expression):
     """부적절한 발언에 대한 피드백 메시지 생성"""
     return f"잠깐, '{inappropriate_expression}' 같은 표현은 좀 그런 것 같아. 우리 서로 존중하면서 <나, 나, 마들렌>에 대해 이야기하자. 그런 표현 말고 네 생각을 다시 말해줄래? 소설에서 어떤 부분이 그런 감정을 불러일으켰는지 궁금해."
@@ -402,6 +402,7 @@ if st.session_state.chat_disabled:
     if st.session_state.get("reflection_sent"):
         st.success("🎉 모든 절차가 완료되었습니다. 실험에 참여해주셔서 감사합니다!")
         st.stop()
+
 
 
 
