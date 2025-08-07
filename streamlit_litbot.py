@@ -338,7 +338,7 @@ if not st.session_state.chat_disabled and st.session_state.get("file_content"):
 
                 system_prompt = f"""
                 너는 {user_name}와 함께 소설 <나, 나, 마들렌>을 읽은 동료 학습자야. 
-                작품 전문: {novel_content[:1000]}
+                작품 전문: {novel_content}
                 감상문: {st.session_state.file_content}
 
                 **중요한 원칙**:
@@ -402,6 +402,7 @@ if st.session_state.chat_disabled:
     if st.session_state.get("reflection_sent"):
         st.success("🎉 모든 절차가 완료되었습니다. 실험에 참여해주셔서 감사합니다!")
         st.stop()
+
 
 
 
