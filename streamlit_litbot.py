@@ -250,11 +250,11 @@ if st.session_state.get("review_sent") and not st.session_state.get("start_time"
         [{"role": "user", "content": "감상문에서 인상 깊은 한 문장을 언급하고, 간결하게 느낌을 말한 뒤 짧고 간결하게 질문해줘."}],
         f"""
 너는 {user_name}와 함께 소설 <나, 나, 마들렌>을 읽은 동료 학습자야.
-작품 요약:
+작품 전문:
 {novel_content}
 
-{user_name}의 감상문 요약:
-{st.session_state.file_content}  # 요약 대신 앞부분 사용 가능
+{user_name}의 감상문:
+{st.session_state.file_content}
 """
     )
     st.session_state.messages.append({"role": "assistant", "content": first_question})
@@ -277,8 +277,8 @@ if elapsed > 600 and not st.session_state.final_prompt_mode:
 지금은 마지막 응답이야. 사용자와 나눈 대화를 정리하고 인사로 마무리해줘.
 질문은 하지 마. 짧고 따뜻하게 끝내줘. 3문장 이내로 말해줘.
 
-작품 요약: {novel_content}
-감상문 요약: {st.session_state.file_content}
+작품 전문: {novel_content}
+감상문: {st.session_state.file_content}
 """
     claude_messages = [{"role": m["role"], "content": m["content"]} for m in st.session_state.messages if m["role"] in ["user", "assistant"]]
     response = get_chatbot_response(claude_messages, final_prompt)
@@ -389,6 +389,7 @@ if st.session_state.chat_disabled:
     if st.session_state.get("reflection_sent"):
         st.success("🎉 모든 절차가 완료되었습니다. 실험에 참여해주셔서 감사합니다!")
         st.stop()
+
 
 
 
