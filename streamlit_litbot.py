@@ -10,7 +10,7 @@ import fitz  # PyMuPDF
 
 def check_inappropriate_content(user_message):
     """부적절한 발언 감지 (문맥 고려)"""
-
+    
     # 명확히 부적절한 표현들만
     clearly_inappropriate = [
         "ㅂㅅ", "병신", "미친놈", "미친년",
@@ -38,10 +38,6 @@ def check_inappropriate_content(user_message):
     
     return False, None
 
-def is_meaningful_review(text):
-    stripped = text.strip().lower()
-    return len(stripped) >= 20 and stripped not in ["jjj", "test", "123", "내용 없음", " ", ""]
-    
 def create_feedback_message(inappropriate_expression):
     """부적절한 발언에 대한 피드백 메시지 생성"""
     return f"잠깐, '{inappropriate_expression}' 같은 표현은 좀 그런 것 같아. 우리 서로 존중하면서 <나, 나, 마들렌>에 대해 이야기하자. 그런 표현 말고 네 생각을 다시 말해줄래? 소설에서 어떤 부분이 그런 감정을 불러일으켰는지 궁금해."
@@ -249,10 +245,10 @@ if st.session_state.get("review_sent") and not st.session_state.get("start_time"
         "role": "assistant",
         "content": f"안녕, {user_name}! 감상문 잘 읽었어. 우리 같이 <나, 나, 마들렌> 이야기 나눠볼까?"
     })
-    
+
     first_question = get_chatbot_response(
-    [{"role": "user", "content": "감상문을 읽고 사용자와 다른 관점을 제시하면서 자연스럽게 질문해줘. '나는 네가 A부분에서 B에 주목한 게 인상적이었어...' 같은 방식으로"}],
-    f"""
+        [{"role": "user", "content": "감상문에서 인상 깊은 한 문장을 언급하고, 간결하게 느낌을 말한 뒤 짧고 간결하게 질문해줘."}],
+        f"""
 너는 {user_name}와 함께 소설 <나, 나, 마들렌>을 읽은 동료 학습자야.
 작품 요약:
 {novel_content}
@@ -329,7 +325,7 @@ if not st.session_state.chat_disabled and st.session_state.get("file_content"):
 
                 system_prompt = f"""
                 너는 {user_name}와 함께 소설 <나, 나, 마들렌>을 읽은 동료 학습자야. 
-                작품 전문: {novel_content}
+                작품 전문: {novel_content[:1000]}
                 감상문: {st.session_state.file_content}
 
                 **중요한 원칙**:
@@ -339,9 +335,6 @@ if not st.session_state.chat_disabled and st.session_state.get("file_content"):
                 4. 사용자와 **다른 해석이나 반대 의견**을 적극적으로 제시하기
                 5. 계속 질문하면서 사용자가 스스로 해석하도록 유도
                 6. 소설 원문의 구체적 장면이나 대사를 언급하며 토론
-                7. 감상문에 언급되지 않은 내용은 절대 언급하지 마.
-                8. 감상문에서 구체적으로 언급된 문장, 단어, 내용만 바탕으로 이야기해.
-                9. 감상문에 구체적 내용이 없으면 작품 자체를 바탕으로 짧게 질문만 던져.
 
                 **말투**:
                 - 친근한 반말 사용 ("그런데 말이야", "나는 좀 다르게 봤어", "진짜?", "어?")
@@ -352,8 +345,6 @@ if not st.session_state.chat_disabled and st.session_state.get("file_content"):
                 - "어? 정말? 나는 오히려 '나'가 더 복잡했던 것 같은데... 왜 그렇게 생각해?"
                 - "그런데 혹시 마들렌 입장에서는 달랐을 수도 있지 않을까?"
                 - "음... 근데 그게 정말 그런 의미일까? 나는 좀 다르게 봤거든"
-                - 처음에는 "나는 네가 [감상문에 있던 문장]에 주목한 게 인상적이었어." 처럼 시작하고, 그 내용을 기준으로 짧게 질문해.
-                - 감상문에 아무 내용도 없으면 그냥 "감상문 내용이 궁금한데, 어떤 부분이 가장 기억에 남았어?"처럼 작품 일반에 대해 물어.
 
                 3문장 이내로 친근한 반말로 **반문하면서** 대화해줘.
                 """
@@ -398,13 +389,6 @@ if st.session_state.chat_disabled:
     if st.session_state.get("reflection_sent"):
         st.success("🎉 모든 절차가 완료되었습니다. 실험에 참여해주셔서 감사합니다!")
         st.stop()
-
-
-
-
-
-
-
 
 
 
