@@ -116,9 +116,8 @@ else:
     """
     st.warning("⚠️ 소설 전문 로딩 실패, 요약 사용 중")
 
-import openai
-
-openai.api_key = st.secrets["openai"]["api_key"]
+from openai import OpenAI
+client = OpenAI(api_key=st.secrets["openai"]["api_key"])
 
 def get_chatbot_response(conversation_history, system_prompt):
     try:
@@ -147,7 +146,7 @@ def get_chatbot_response(conversation_history, system_prompt):
         elif res.status_code in [429, 500, 503, 408]:
             st.warning("⚠️ AI 사용량이 많아 잠시 다른 모델로 응답할게!")  # 생략 가능
             gpt_messages = [{"role": "system", "content": system_prompt}] + conversation_history
-            gpt_res = openai.ChatCompletion.create(
+            gpt_res = client.chat.completions.create(
                 model="gpt-4o",
                 messages=gpt_messages,
                 max_tokens=512,
@@ -382,5 +381,6 @@ if st.session_state.chat_disabled:
     if st.session_state.get("reflection_sent"):
         st.success("🎉 모든 절차가 완료되었습니다. 실험에 참여해주셔서 감사합니다!")
         st.stop()
+
 
 
