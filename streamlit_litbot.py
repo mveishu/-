@@ -122,6 +122,12 @@ openai.api_key = st.secrets["openai"]["api_key"]
 
 def get_chatbot_response(conversation_history, system_prompt):
     try:
+                # Claude API 호출 전, assistant 메시지 끝 공백 제거
+        conversation_history = [
+            {"role": m["role"], "content": m["content"].rstrip()}
+            for m in conversation_history
+        ]
+
         headers = {
             "x-api-key": st.secrets["claude"]["api_key"],
             "anthropic-version": "2023-06-01",
@@ -376,3 +382,4 @@ if st.session_state.chat_disabled:
     if st.session_state.get("reflection_sent"):
         st.success("🎉 모든 절차가 완료되었습니다. 실험에 참여해주셔서 감사합니다!")
         st.stop()
+
